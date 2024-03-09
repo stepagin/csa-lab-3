@@ -192,9 +192,6 @@ class ControlUnit:
             return True
 
         elif opcode is Opcode.JZ:
-            # self.data_path.signal_data_latch_reg()
-            # self.tick()
-
             if self.data_path.zero():
                 self.signal_latch_program_counter(sel_next=False)
             else:
@@ -204,9 +201,6 @@ class ControlUnit:
             return True
 
         elif opcode is Opcode.JNZ:
-            # self.data_path.signal_data_latch_reg()
-            # self.tick()
-
             if not self.data_path.zero():
                 self.signal_latch_program_counter(sel_next=False)
             else:
@@ -216,9 +210,6 @@ class ControlUnit:
             return True
 
         elif opcode is Opcode.JMC:
-            # self.data_path.signal_data_latch_reg()
-            # self.tick()
-
             if self.data_path.carry():
                 self.signal_latch_program_counter(sel_next=False)
             else:
@@ -228,9 +219,6 @@ class ControlUnit:
             return True
 
         elif opcode is Opcode.JMNC:
-            # self.data_path.signal_data_latch_reg()
-            # self.tick()
-
             if not self.data_path.carry():
                 self.signal_latch_program_counter(sel_next=False)
             else:
@@ -240,9 +228,6 @@ class ControlUnit:
             return True
 
         elif opcode is Opcode.JLT:
-            # self.data_path.signal_data_latch_reg()
-            # self.tick()
-
             if self.data_path.neg():
                 self.signal_latch_program_counter(sel_next=False)
             else:
@@ -252,9 +237,6 @@ class ControlUnit:
             return True
 
         elif opcode is Opcode.JGT:
-            # self.data_path.signal_data_latch_reg()
-            # self.tick()
-
             if not self.data_path.neg() and not self.data_path.zero():
                 self.signal_latch_program_counter(sel_next=False)
             else:
