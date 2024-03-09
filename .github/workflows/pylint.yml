@@ -21,6 +21,7 @@ jobs:
           pip install poetry
           pip install coverage
           pip install pytest
+          pip install pytest-golden
           poetry install
 
       - name: Run tests and collect coverage
@@ -49,6 +50,7 @@ jobs:
           pip install coverage
           # pip install ruff
           pip install pytest
+          pip install pytest-golden
           poetry install
 
       # - name: Check code formatting with Ruff
