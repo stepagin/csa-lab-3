@@ -178,7 +178,7 @@ def translate(text):
             if label_name == "data":
                 data_processing = True
             elif label_name == "start":
-                assert code_labels.get(label_name, None) is None, f'"start" label already exists, line: {line_number}'
+                assert "start" not in code_labels, f'"start" label already exists, line: {line_number}'
                 data_processing = False
             # сохранение
             if data_processing:
@@ -281,12 +281,16 @@ def translate(text):
 
 
 def main(code_source_filename, code_target_filename):
+    global section_code, section_data
+    global code_labels, data_labels
     with open(code_source_filename, encoding="utf-8") as f:
         code_source_array = f.read().split("\n")
     code = translate(code_source_array)
     # print(*code["instruction_memory"], sep='\n')
     write_code(code_target_filename, code)
     print("source LoC:", len(code_source_array), "code instr:", len(code))
+    section_code, section_data = [], []
+    code_labels, data_labels = dict(), dict()
 
 
 if __name__ == "__main__":

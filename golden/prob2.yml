@@ -1,0 +1,94 @@
+in_source: |-
+  org 0
+  start:
+      mov esi, 1 ; f1 = 1
+      mov edi, 1 ; f2 = 1
+      xor eax, eax ; в eax будет считаться следующий член f3
+      xor ecx, ecx ; sum = 0
+      xor edx, edx ; буффер для сохранения eax
+      push 0 ; выставляем нуль для нуль-терминированного вывода
+  loop:
+      mov eax, esi ; eax = f1
+      add eax, edi ; eax += f2
+      cmp eax, 4000000 ; если eax больше 4_000_000
+      jgt number_push ; то выходим из цикла
+      ; иначе проверяем на чётность
+      mov edx, eax ; сохраняем значение аккумулятора в edx
+      asr eax ; сдвигаем значение аккумулятора побитово вправо, eax[0] -> C
+      mov eax, edx ; восстанавливаем значение аккумулятора из edx
+      jmc calc ; если последний бит был 1, то пропускаем суммирование
+      ; добавляем f3 в сумму
+      add ecx, eax ; sum += f3
+  calc:
+      mov esi, edi ; f1 = f2
+      mov edi, eax ; f2 = f3
+      jmp loop ; продолжаем цикл
+  number_push: ; выводим сумму на устройство вывода
+      mov edx, ecx ; d = sum
+      mod edx, 10 ; d = d mod 10
+      add edx, 48 ; делаем сдвиг, чтобы число стало кодом символа числа
+      push edx ; сохраняем d в начало вывода
+      div ecx, 10 ; sum = sum div 10
+      cmp ecx, 0 ; если сумма ещё не равна 0
+      jgt number_push ; то выводим ещё цифру на экран
+  number_pop:
+      pop edx ; достаём первый символ
+      cmp edx, 0 ; если он равен нулю
+      jz end ; то заканчиваем вывод
+      mov (2047), edx ; иначе вывести на экран символ
+      jmp number_pop ; продолжить вывод
+  end:
+      hlt ; останавливаем программу
+in_stdin: |
+
+out_code: |-
+  {
+  	"data_memory": [
+  		
+  	],
+  	"instruction_memory": [
+  		{"index": 0, "opcode": "mov", "operand1": "esi", "operand2": "1"},
+  		{"index": 1, "opcode": "mov", "operand1": "edi", "operand2": "1"},
+  		{"index": 2, "opcode": "xor", "operand1": "eax", "operand2": "eax"},
+  		{"index": 3, "opcode": "xor", "operand1": "ecx", "operand2": "ecx"},
+  		{"index": 4, "opcode": "xor", "operand1": "edx", "operand2": "edx"},
+  		{"index": 5, "opcode": "dec", "operand1": "esp"},
+  		{"index": 6, "opcode": "mov", "operand1": "(esp)", "operand2": "0"},
+  		{"index": 7, "opcode": "mov", "operand1": "eax", "operand2": "esi"},
+  		{"index": 8, "opcode": "add", "operand1": "eax", "operand2": "edi"},
+  		{"index": 9, "opcode": "cmp", "operand1": "eax", "operand2": "4000000"},
+  		{"index": 10, "opcode": "jgt", "operand1": 19},
+  		{"index": 11, "opcode": "mov", "operand1": "edx", "operand2": "eax"},
+  		{"index": 12, "opcode": "asr", "operand1": "eax"},
+  		{"index": 13, "opcode": "mov", "operand1": "eax", "operand2": "edx"},
+  		{"index": 14, "opcode": "jmc", "operand1": 16},
+  		{"index": 15, "opcode": "add", "operand1": "ecx", "operand2": "eax"},
+  		{"index": 16, "opcode": "mov", "operand1": "esi", "operand2": "edi"},
+  		{"index": 17, "opcode": "mov", "operand1": "edi", "operand2": "eax"},
+  		{"index": 18, "opcode": "jmp", "operand1": 7},
+  		{"index": 19, "opcode": "mov", "operand1": "edx", "operand2": "ecx"},
+  		{"index": 20, "opcode": "mod", "operand1": "edx", "operand2": "10"},
+  		{"index": 21, "opcode": "add", "operand1": "edx", "operand2": "48"},
+  		{"index": 22, "opcode": "dec", "operand1": "esp"},
+  		{"index": 23, "opcode": "mov", "operand1": "(esp)", "operand2": "edx"},
+  		{"index": 24, "opcode": "div", "operand1": "ecx", "operand2": "10"},
+  		{"index": 25, "opcode": "cmp", "operand1": "ecx", "operand2": "0"},
+  		{"index": 26, "opcode": "jgt", "operand1": 19},
+  		{"index": 27, "opcode": "mov", "operand1": "edx", "operand2": "(esp)"},
+  		{"index": 28, "opcode": "inc", "operand1": "esp"},
+  		{"index": 29, "opcode": "cmp", "operand1": "edx", "operand2": "0"},
+  		{"index": 30, "opcode": "jz", "operand1": 33},
+  		{"index": 31, "opcode": "mov", "operand1": "(2047)", "operand2": "edx"},
+  		{"index": 32, "opcode": "jmp", "operand1": 27},
+  		{"index": 33, "opcode": "hlt"}
+  	]
+  }
+
+out_stdout: |
+  source LoC: 40 code instr: 2
+  ============================================================
+  4613732
+  instr_counter:  465 ticks: 698
+
+out_log: |
+  INFO     root:machine.py:427 output_buffer: '4613732'

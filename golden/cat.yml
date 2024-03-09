@@ -1,0 +1,39 @@
+in_source: |-
+  org 0
+  start:
+  loop:
+      ; считывание и вывод входных данных
+      in ; загружаем ввод (2046) в eax
+      cmp eax, 0 ; проверяем, что не достигли конца строки
+      jz end_loop ; иначе заканчиваем цикл
+      out ; сохраняем символ из eax в устройстве вывода (2047)
+      jmp loop ; продолжаем цикл
+  end_loop:
+      hlt
+
+in_stdin: |-
+  hello
+out_code: |-
+  {
+  	"data_memory": [
+  		
+  	],
+  	"instruction_memory": [
+  		{"index": 0, "opcode": "mov", "operand1": "eax", "operand2": "(2046)"},
+  		{"index": 1, "opcode": "cmp", "operand1": "eax", "operand2": "0"},
+  		{"index": 2, "opcode": "jz", "operand1": 5},
+  		{"index": 3, "opcode": "mov", "operand1": "(2047)", "operand2": "eax"},
+  		{"index": 4, "opcode": "jmp", "operand1": 0},
+  		{"index": 5, "opcode": "hlt"}
+  	]
+  }
+
+out_stdout: |
+  source LoC: 11 code instr: 2
+  ============================================================
+  hello
+  instr_counter:  25 ticks: 35
+
+out_log: |
+  WARNING  root:machine.py:423 Input buffer is empty!
+  INFO     root:machine.py:427 output_buffer: 'hello'

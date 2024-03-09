@@ -1,0 +1,117 @@
+in_source: |-
+  org 0
+  data:
+      hello_name: .word "Hello! How is your name?\nHello, ", 0
+      last: .word "!\n", 0
+  org 0
+  start:
+      mov esi, hello_name ; загружаем адрес строки в eax
+      xor eax, eax ; очистка счётчика
+  loop_a:
+      ; вывод приветственных слов
+      cmp (esi), 0 ; проверяем, что не достигли конца строки
+      jz loop_b ; иначе заканчиваем цикл
+      mov eax, (esi) ; записываем символ в аккумулятор
+      out ; сохраняем символ из eax в устройстве вывода (2047)
+      inc esi ; инкрементируем счётчик
+      jmp loop_a ; продолжаем цикл
+  loop_b:
+      ; считывание и вывод входных данных
+      in ; загружаем ввод (2046) в eax
+      cmp eax, 10 ; проверяем, что не достигли конца строки
+      jz end_loop_b ; иначе заканчиваем цикл
+      out ; сохраняем символ из eax в устройстве вывода (2047)
+      jmp loop_b ; продолжаем цикл
+  end_loop_b:
+      xor esi, esi ; очистка счётчика
+      mov esi, last ; загружаем адрес строки в eax
+  loop_c:
+      ; вывод последних символов
+      cmp (esi), 0 ; проверяем, что не достигли конца строки
+      jz end_loop_c ; иначе заканчиваем цикл
+      mov eax, (esi) ; записываем символ в аккумулятор
+      out ; сохраняем символ из eax в устройстве вывода (2047)
+      inc esi ; инкрементируем счётчик
+      jmp loop_c ; продолжаем цикл
+  end_loop_c:
+      hlt
+
+in_stdin: |
+  Steve
+
+out_code: |-
+  {
+  	"data_memory": [
+  		{"index": 0, "value": 72},
+  		{"index": 1, "value": 101},
+  		{"index": 2, "value": 108},
+  		{"index": 3, "value": 108},
+  		{"index": 4, "value": 111},
+  		{"index": 5, "value": 33},
+  		{"index": 6, "value": 32},
+  		{"index": 7, "value": 72},
+  		{"index": 8, "value": 111},
+  		{"index": 9, "value": 119},
+  		{"index": 10, "value": 32},
+  		{"index": 11, "value": 105},
+  		{"index": 12, "value": 115},
+  		{"index": 13, "value": 32},
+  		{"index": 14, "value": 121},
+  		{"index": 15, "value": 111},
+  		{"index": 16, "value": 117},
+  		{"index": 17, "value": 114},
+  		{"index": 18, "value": 32},
+  		{"index": 19, "value": 110},
+  		{"index": 20, "value": 97},
+  		{"index": 21, "value": 109},
+  		{"index": 22, "value": 101},
+  		{"index": 23, "value": 63},
+  		{"index": 24, "value": 10},
+  		{"index": 25, "value": 72},
+  		{"index": 26, "value": 101},
+  		{"index": 27, "value": 108},
+  		{"index": 28, "value": 108},
+  		{"index": 29, "value": 111},
+  		{"index": 30, "value": 44},
+  		{"index": 31, "value": 32},
+  		{"index": 32, "value": 0},
+  		{"index": 33, "value": 33},
+  		{"index": 34, "value": 10},
+  		{"index": 35, "value": 0}
+  	],
+  	"instruction_memory": [
+  		{"index": 0, "opcode": "mov", "operand1": "esi", "operand2": "0"},
+  		{"index": 1, "opcode": "xor", "operand1": "eax", "operand2": "eax"},
+  		{"index": 2, "opcode": "cmp", "operand1": "(esi)", "operand2": "0"},
+  		{"index": 3, "opcode": "jz", "operand1": 8},
+  		{"index": 4, "opcode": "mov", "operand1": "eax", "operand2": "(esi)"},
+  		{"index": 5, "opcode": "mov", "operand1": "(2047)", "operand2": "eax"},
+  		{"index": 6, "opcode": "inc", "operand1": "esi"},
+  		{"index": 7, "opcode": "jmp", "operand1": 2},
+  		{"index": 8, "opcode": "mov", "operand1": "eax", "operand2": "(2046)"},
+  		{"index": 9, "opcode": "cmp", "operand1": "eax", "operand2": "10"},
+  		{"index": 10, "opcode": "jz", "operand1": 13},
+  		{"index": 11, "opcode": "mov", "operand1": "(2047)", "operand2": "eax"},
+  		{"index": 12, "opcode": "jmp", "operand1": 8},
+  		{"index": 13, "opcode": "xor", "operand1": "esi", "operand2": "esi"},
+  		{"index": 14, "opcode": "mov", "operand1": "esi", "operand2": "33"},
+  		{"index": 15, "opcode": "cmp", "operand1": "(esi)", "operand2": "0"},
+  		{"index": 16, "opcode": "jz", "operand1": 21},
+  		{"index": 17, "opcode": "mov", "operand1": "eax", "operand2": "(esi)"},
+  		{"index": 18, "opcode": "mov", "operand1": "(2047)", "operand2": "eax"},
+  		{"index": 19, "opcode": "inc", "operand1": "esi"},
+  		{"index": 20, "opcode": "jmp", "operand1": 15},
+  		{"index": 21, "opcode": "hlt"}
+  	]
+  }
+
+out_stdout: |
+  source LoC: 36 code instr: 2
+  ============================================================
+  Hello! How is your name?
+  Hello, Steve!
+
+  instr_counter:  240 ticks: 357
+
+out_log: |
+  INFO     root:machine.py:427 output_buffer: 'Hello! How is your name?\nHello, Steve!\n'
