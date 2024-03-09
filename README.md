@@ -310,3 +310,211 @@
     - превышении лимита количества выполняемых инструкций;
     - исключении `EOFError` -- если нет данных для чтения из порта ввода;
     - исключении `StopIteration` -- если выполнена инструкция `halt`.
+
+## Тестирование
+
+
+Реализованные программы
+
+1. [hello world](examples/hello_world.asm): вывести на экран строку `'Hello World!'`
+2. [cat](examples/cat.asm): программа `cat`, повторяем ввод на выводе.
+3. [hello_user](examples/hello_user.asm) -- программа `hello_user`: запросить у пользователя его
+   имя, считать его, вывести на экран приветствие
+4. [prob2](examples/prob2.asm): найти сумму всех четных чисел Фибоначчи, не превышающих `4 000 000`.
+
+
+Интеграционные тесты реализованы тут [integration_test](./integration_test.py):
+
+- через golden tests, конфигурация которых лежит в папке [golden](./golden).
+
+CI:
+
+``` yaml
+name: Python CI
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Run tests and collect coverage
+        run: |
+          poetry run coverage run -m pytest .
+          poetry run coverage report -m
+        env:
+          CI: true
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Check code formatting with Ruff
+        run: poetry run ruff format --check .
+
+      - name: Run Ruff linters
+        run: poetry run ruff check .
+```
+
+
+Пример использования и журнал работы процессора на примере `cat`:
+
+``` shell
+$ cat .\examples\input.txt
+Stepan
+$ cat .\examples\cat.asm
+org 0
+start:
+loop:
+        ; считывание и вывод входных данных
+        in ; загружаем ввод (2046) в eax
+        cmp eax, 0 ; проверяем, что не достигли конца строки
+        jz end_loop ; иначе заканчиваем цикл
+        out ; сохраняем символ из eax в устройстве вывода (2047)
+        jmp loop ; продолжаем цикл
+end_loop:
+        hlt
+$ python .\translator.py .\examples\cat.asm target.out
+source LoC: 11 code instr: 2
+$ cat .\target.out
+{
+        "data_memory": [
+
+        ],
+        "instruction_memory": [
+                {"index": 0, "opcode": "mov", "operand1": "eax", "operand2": "(2046)"},
+                {"index": 1, "opcode": "cmp", "operand1": "eax", "operand2": "0"},
+                {"index": 2, "opcode": "jz", "operand1": 5},
+                {"index": 3, "opcode": "mov", "operand1": "(2047)", "operand2": "eax"},
+                {"index": 4, "opcode": "jmp", "operand1": 0},
+                {"index": 5, "opcode": "hlt"}
+        ]
+}
+$ python .\machine.py .\target.out .\examples\input.txt
+DEBUG:root:TICK:   0 PC:   0 ADDR:   0 MEM_OUT: 0 EAX(0), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)        mov eax (2046)
+DEBUG:root:TICK:   2 PC:   1 ADDR: 2046 MEM_OUT: 0 EAX(83), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)      cmp eax 0
+DEBUG:root:TICK:   3 PC:   2 ADDR: 2046 MEM_OUT: 0 EAX(83), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)      jz 5
+DEBUG:root:TICK:   4 PC:   3 ADDR: 2046 MEM_OUT: 0 EAX(83), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)      mov (2047) eax
+DEBUG:root:output: '' << 'S'
+DEBUG:root:TICK:   6 PC:   4 ADDR: 2047 MEM_OUT: 83 EAX(83), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     jmp 0
+DEBUG:root:TICK:   7 PC:   0 ADDR: 2047 MEM_OUT: 83 EAX(83), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     mov eax (2046)
+DEBUG:root:TICK:   9 PC:   1 ADDR: 2046 MEM_OUT: 0 EAX(116), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     cmp eax 0
+DEBUG:root:TICK:  10 PC:   2 ADDR: 2046 MEM_OUT: 0 EAX(116), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     jz 5
+DEBUG:root:TICK:  11 PC:   3 ADDR: 2046 MEM_OUT: 0 EAX(116), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     mov (2047) eax
+DEBUG:root:output: 'S' << 't'
+DEBUG:root:TICK:  13 PC:   4 ADDR: 2047 MEM_OUT: 116 EAX(116), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)   jmp 0
+DEBUG:root:TICK:  14 PC:   0 ADDR: 2047 MEM_OUT: 116 EAX(116), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)   mov eax (2046)
+DEBUG:root:TICK:  16 PC:   1 ADDR: 2046 MEM_OUT: 0 EAX(101), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     cmp eax 0
+DEBUG:root:TICK:  17 PC:   2 ADDR: 2046 MEM_OUT: 0 EAX(101), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     jz 5
+DEBUG:root:TICK:  18 PC:   3 ADDR: 2046 MEM_OUT: 0 EAX(101), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     mov (2047) eax
+DEBUG:root:output: 'St' << 'e'
+DEBUG:root:TICK:  20 PC:   4 ADDR: 2047 MEM_OUT: 101 EAX(101), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)   jmp 0
+DEBUG:root:TICK:  21 PC:   0 ADDR: 2047 MEM_OUT: 101 EAX(101), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)   mov eax (2046)
+DEBUG:root:TICK:  23 PC:   1 ADDR: 2046 MEM_OUT: 0 EAX(112), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     cmp eax 0
+DEBUG:root:TICK:  24 PC:   2 ADDR: 2046 MEM_OUT: 0 EAX(112), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     jz 5
+DEBUG:root:TICK:  25 PC:   3 ADDR: 2046 MEM_OUT: 0 EAX(112), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     mov (2047) eax
+DEBUG:root:output: 'Ste' << 'p'
+DEBUG:root:TICK:  27 PC:   4 ADDR: 2047 MEM_OUT: 112 EAX(112), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)   jmp 0
+DEBUG:root:TICK:  28 PC:   0 ADDR: 2047 MEM_OUT: 112 EAX(112), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)   mov eax (2046)
+DEBUG:root:TICK:  30 PC:   1 ADDR: 2046 MEM_OUT: 0 EAX(97), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)      cmp eax 0
+DEBUG:root:TICK:  31 PC:   2 ADDR: 2046 MEM_OUT: 0 EAX(97), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)      jz 5
+DEBUG:root:TICK:  32 PC:   3 ADDR: 2046 MEM_OUT: 0 EAX(97), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)      mov (2047) eax
+DEBUG:root:output: 'Step' << 'a'
+DEBUG:root:TICK:  34 PC:   4 ADDR: 2047 MEM_OUT: 97 EAX(97), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     jmp 0
+DEBUG:root:TICK:  35 PC:   0 ADDR: 2047 MEM_OUT: 97 EAX(97), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     mov eax (2046)
+DEBUG:root:TICK:  37 PC:   1 ADDR: 2046 MEM_OUT: 0 EAX(110), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     cmp eax 0
+DEBUG:root:TICK:  38 PC:   2 ADDR: 2046 MEM_OUT: 0 EAX(110), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     jz 5
+DEBUG:root:TICK:  39 PC:   3 ADDR: 2046 MEM_OUT: 0 EAX(110), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     mov (2047) eax
+DEBUG:root:output: 'Stepa' << 'n'
+DEBUG:root:TICK:  41 PC:   4 ADDR: 2047 MEM_OUT: 110 EAX(110), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)   jmp 0
+DEBUG:root:TICK:  42 PC:   0 ADDR: 2047 MEM_OUT: 110 EAX(110), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)   mov eax (2046)
+DEBUG:root:TICK:  44 PC:   1 ADDR: 2046 MEM_OUT: 0 EAX(10), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)      cmp eax 0
+DEBUG:root:TICK:  45 PC:   2 ADDR: 2046 MEM_OUT: 0 EAX(10), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)      jz 5
+DEBUG:root:TICK:  46 PC:   3 ADDR: 2046 MEM_OUT: 0 EAX(10), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)      mov (2047) eax
+DEBUG:root:output: 'Stepan' << '\n'
+DEBUG:root:TICK:  48 PC:   4 ADDR: 2047 MEM_OUT: 10 EAX(10), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     jmp 0
+DEBUG:root:TICK:  49 PC:   0 ADDR: 2047 MEM_OUT: 10 EAX(10), EBX(None), ECX(None), EDX(None), ESI(None), EDI(None), EBP(None), ESP(2045)     mov eax (2046)
+WARNING:root:Input buffer is empty!
+INFO:root:output_buffer: 'Stepan\n'
+Stepan
+
+instr_counter:  35 ticks: 49
+
+```
+
+Пример проверки исходного кода:
+
+``` shell
+$ poetry run pytest . -v
+c:\users\тёпа\onedrive - itmo university\itmo\архитектура компьютера\3 лаба\src\.venv\lib\site-packages\pytest_golden\plugin.py:53: GoldenTestUsageWarning: Add 'ena
+ble_assertion_pass_hook=true' to pytest.ini for safer usage of pytest-golden.
+  warnings.warn(
+======================================================================= test session starts =======================================================================
+platform win32 -- Python 3.8.5, pytest-8.0.2, pluggy-1.4.0 -- c:\users\тёпа\onedrive - itmo university\itmo\архитектура компьютера\3 лаба\src\.venv\scripts\python.e
+xe
+cachedir: .pytest_cache
+rootdir: C:\Users\Тёпа\OneDrive - ITMO UNIVERSITY\ITMO\Архитектура компьютера\3 лаба\csa-lab-3
+integration_test.py::test_translator_and_machine[golden/hellouser.yml] PASSED                                                                                [ 50%] 
+integration_test.py::test_translator_and_machine[golden/helloworld.yml] PASSED                                                                               [ 75%] 
+integration_test.py::test_translator_and_machine[golden/prob2.yml] PASSED                                                                                    [100%] 
+
+======================================================================== 4 passed in 0.33s ======================================================================== 
+(.venv) (base) PS C:\Users\Тёпа\OneDrive - ITMO UNIVERSITY\ITMO\Архитектура компьютера\3 лаба\csa-lab-3> 
+(.venv) (base) PS C:\Users\Тёпа\OneDrive - ITMO UNIVERSITY\ITMO\Архитектура компьютера\3 лаба\csa-lab-3>
+(.venv) (base) PS C:\Users\Тёпа\OneDrive - ITMO UNIVERSITY\ITMO\Архитектура компьютера\3 лаба\csa-lab-3>
+(.venv) (base) PS C:\Users\Тёпа\OneDrive - ITMO UNIVERSITY\ITMO\Архитектура компьютера\3 лаба\csa-lab-3> poetry run pytest . -v --update-goldens
+c:\users\тёпа\onedrive - itmo university\itmo\архитектура компьютера\3 лаба\src\.venv\lib\site-packages\pytest_golden\plugin.py:53: GoldenTestUsageWarning: Add 'ena
+ble_assertion_pass_hook=true' to pytest.ini for safer usage of pytest-golden.
+  warnings.warn(
+======================================================================= test session starts =======================================================================
+platform win32 -- Python 3.8.5, pytest-8.0.2, pluggy-1.4.0 -- c:\users\тёпа\onedrive - itmo university\itmo\архитектура компьютера\3 лаба\src\.venv\scripts\python.e
+xe
+cachedir: .pytest_cache
+rootdir: C:\Users\Тёпа\OneDrive - ITMO UNIVERSITY\ITMO\Архитектура компьютера\3 лаба\csa-lab-3
+plugins: golden-0.2.2
+collected 4 items
+
+integration_test.py::test_translator_and_machine[golden/cat.yml] PASSED                                                                                      [ 25%]
+integration_test.py::test_translator_and_machine[golden/hellouser.yml] PASSED                                                                                [ 50%]
+integration_test.py::test_translator_and_machine[golden/helloworld.yml] PASSED                                                                               [ 75%]
+integration_test.py::test_translator_and_machine[golden/prob2.yml] PASSED                                                                                    [100%]
+
+======================================================================== 4 passed in 0.98s ======================================================================== 
+
+```
+
+```text
+| ФИО                        | алг   | LoC | code байт | code инстр. | инстр. | такт. | вариант |
+| Понамарев Степан Андреевич | hello | 15  | -         | 8           | 81     | 122   | `asm | risc | harv | hw | instr | struct | stream | mem | cstr | prob2 | [4]char`     |
+| Понамарев Степан Андреевич | cat   | 11  | -         | 6           | 30     | 42    | `asm | risc | harv | hw | instr | struct | stream | mem | cstr | prob2 | [4]char`  |
+| Понамарев Степан Андреевич | prob2 | 40  | -         | 43          | 465    | 698   | `asm | risc | harv | hw | instr | struct | stream | mem | cstr | prob2 | [4]char`     |
+```
