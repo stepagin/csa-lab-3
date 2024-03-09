@@ -2,9 +2,6 @@ import json
 import re
 from enum import Enum
 
-INT_MAX = 2147483647
-INT_MIN = -2147483648
-
 regex = {
     "label": re.compile(r"\A([a-zA-Z_]+):"),
     "address": re.compile(r"\Aorg\s+(\d+)\Z"),
@@ -12,6 +9,9 @@ regex = {
     "unaddressed": re.compile(r"\A([a-zA-Z]+)\Z"),
     "addressed": re.compile(r"\A([a-zA-Z]+)\s+([()a-zA-Z0-9_]+)(?:,\s+([()a-zA-Z0-9_]+))?\Z")
 }
+
+INT_MAX = 2147483647
+INT_MIN = -2147483648
 
 jump_opcodes = ["jmp", "jz", "jnz", "jlt", "jgt", "jmc", "jmnc"]
 one_operand_opcodes = ["inc", "dec", "push", "pop", "asr"] + jump_opcodes
