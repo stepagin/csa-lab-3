@@ -60,7 +60,7 @@ class DataPath:
             self.esp = value
 
     def signal_latch_data_addr(self, sel):
-        assert 0 <= sel <= 2046, "internal error, incorrect selector: {}".format(sel)
+        assert 0 <= sel <= 2047, "internal error, incorrect selector: {}".format(sel)
         self.data_address = sel
 
     def signal_data_latch_reg(self, reg):
